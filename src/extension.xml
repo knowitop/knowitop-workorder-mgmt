@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension format="1.0">
+	<extension_code>knowitop-workorder-mgmt</extension_code>
+	<company>_knowitop</company>
+	<author><![CDATA[Vladimir Kunin]]></author>
+	<label><![CDATA[Work Order Management]]></label>
+	<description><![CDATA[Work Schedule for periodic tasks, Work Order templates and additional attributes for Work Orders.]]></description>
+	<version>1.0.1</version>
+	<release_date>2019-10-21</release_date>
+	<version_description><![CDATA[Fixed user rights for Work Orders]]></version_description>
+	<itop_version_min>2.6.0</itop_version_min>
+	<status>release</status>
+	<mandatory>false</mandatory>
+	<more_info_url>https://knowitop.ru</more_info_url>
+</extension>

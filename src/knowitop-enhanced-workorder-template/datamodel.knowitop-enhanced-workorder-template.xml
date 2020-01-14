@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.5">
+  <constants>
+  </constants>
+  <classes>
+    <class id="WorkOrderTemplate">
+      <fields>
+        <field id="wo_solution" xsi:type="AttributeText" _delta="define">
+          <sql>wo_solution</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+      </fields>
+      <methods>
+        <method id="DoCreateTargetObject" _delta="redefine">
+          <comment><![CDATA[	/**
+	 * @param \DBObject|null $oTicket
+	 *
+	 * @return \WorkOrder
+	 * @throws \CoreException
+	 * @throws \Exception
+	 */]]></comment>
+          <static>false</static>
+          <access>protected</access>
+          <type>Internal</type>
+          <code><![CDATA[	protected function DoCreateTargetObject(DBObject $oTicket = null)
+	{
+	    $this->ValidateContextObject($oTicket);
+		$aValues = [
+			'ticket_id' => $oTicket->GetKey(),
+			'name' => $this->Get('wo_name'),
+			'description' => $this->Get('wo_description'),
+			'team_id' => $this->Get('wo_team_id'),
+			'agent_id' => $this->Get('wo_agent_id'),
+			'solution' => $this->Get('wo_solution'),
+			'planned_start_date' => time(),
+			'planned_end_date' => time() + $this->Get('wo_duration')
+		];
+		/** @var \WorkOrder $oWorkOrder */
+		$oWorkOrder = MetaModel::NewObject('WorkOrder', $aValues);
+
+		return $oWorkOrder;
+	}]]></code>
+        </method>
+      </methods>
+      <presentation>
+        <details>
+          <items>
+            <item id="col:col2">
+              <items>
+                <item id="fieldset:ObjectTemplate:template">
+                  <items>
+                    <item id="wo_solution" _delta="define">
+                      <rank>60</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+      </presentation>
+    </class>
+  </classes>
+  <menus>
+  </menus>
+  <user_rights>
+    <groups>
+    </groups>
+    <profiles>
+    </profiles>
+  </user_rights>
+</itop_design>
