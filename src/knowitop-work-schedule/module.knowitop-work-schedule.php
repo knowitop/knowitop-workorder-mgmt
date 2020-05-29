@@ -5,7 +5,7 @@
 //
 SetupWebPage::AddModule(
 	__FILE__, // Path to the current file, all other file names are relative to the directory containing this file
-	'knowitop-work-schedule/1.2.0',
+	'knowitop-work-schedule/1.2.1',
 	array(
 		// Identification
 		//
@@ -15,12 +15,12 @@ SetupWebPage::AddModule(
 		// Setup
 		//
 		'dependencies' => array(
-			'itop-tickets/2.5.0',
-			'itop-config-mgmt/2.5.0',
-			'itop-profiles-itil/2.5.0',
+			'itop-tickets/2.7.0',
+			'itop-config-mgmt/2.7.0',
+			'itop-profiles-itil/2.7.0',
 			'knowitop-object-template/0.3.0',
-			'knowitop-enhanced-workorders/1.0.0',
-			'dashlet-calendar/1.0.5',
+			'knowitop-enhanced-workorders/1.2.0',
+			'dashlet-calendar/1.1.1',
 		),
 		'mandatory' => false,
 		'visible' => true,

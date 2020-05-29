@@ -86,13 +86,10 @@
               <code><![CDATA[
       public function DBInsertNoReload()
       {
-        $oMutex = new iTopMutex('workorder_insert');
-        $oMutex->Lock();
-        $iNextId = MetaModel::GetNextKey(get_class($this));
+        $iNextId = ItopCounter::IncClass(get_class($this));
         $sRef = $this->MakeWorkOrderRef($iNextId);
-        $this->Set('ref', $sRef);
+        $this->SetIfNull('ref', $sRef);
         $iKey = parent::DBInsertNoReload();
-        $oMutex->Unlock();
         return $iKey;
       }
       ]]>

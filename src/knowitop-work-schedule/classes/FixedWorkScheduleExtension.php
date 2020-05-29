@@ -291,6 +291,6 @@ EOF
 		{
 			$sText = $oObject->Get(self::$sCronExpressionAttCode);
 		}
-		$oPage->add_ready_script("$('.field_container[data-attcode=".self::$sCronExpressionAttCode."]').find('div.field_value').text('$sText');");
+		$oPage->add_ready_script("$('.field_container[data-attribute-code=".self::$sCronExpressionAttCode."]').find('div.field_value').text('$sText');");
 	}
 }

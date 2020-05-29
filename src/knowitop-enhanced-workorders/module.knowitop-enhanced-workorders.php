@@ -5,7 +5,7 @@
 
 SetupWebPage::AddModule(
 	__FILE__, // Path to the current file, all other file names are relative to the directory containing this file
-	'knowitop-enhanced-workorders/1.0.1',
+	'knowitop-enhanced-workorders/1.2.0',
 	array(
 		// Identification
 		//
@@ -15,8 +15,8 @@ SetupWebPage::AddModule(
 		// Setup
 		//
 		'dependencies' => array(
-			'itop-tickets/2.5.0',
-			'itop-profiles-itil/2.5.0',
+			'itop-tickets/2.7.0',
+			'itop-profiles-itil/2.7.0',
 		),
 		'mandatory' => false,
 		'visible' => true,
