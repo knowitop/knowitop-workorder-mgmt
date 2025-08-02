@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.5">
+  <constants>
+  </constants>
+  <classes>
+    <class id="WorkOrder">
+      <properties>
+          <naming _delta="redefine">
+              <attributes>
+                  <attribute id="ref"/>
+              </attributes>
+          </naming>
+          <reconciliation _delta="redefine">
+              <attributes>
+                  <attribute id="ref"/>
+              </attributes>
+          </reconciliation>
+          <order _delta="define">
+              <columns>
+                  <column id="ref" ascending="false"/>
+              </columns>
+          </order>
+      </properties>
+      <fields>
+        <field id="ref" xsi:type="AttributeString" _delta="define">
+          <sql>ref</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="ticket_org_id" xsi:type="AttributeExternalField" _delta="define">
+          <extkey_attcode>ticket_id</extkey_attcode>
+          <target_attcode>org_id</target_attcode>
+        </field>
+        <field id="ticket_caller_id" xsi:type="AttributeExternalField" _delta="define">
+          <extkey_attcode>ticket_id</extkey_attcode>
+          <target_attcode>caller_id</target_attcode>
+        </field>
+        <field id="ticket_title" xsi:type="AttributeExternalField" _delta="define">
+          <extkey_attcode>ticket_id</extkey_attcode>
+          <target_attcode>title</target_attcode>
+        </field>
+        <field id="status">
+          <values _delta="redefine">
+            <value id="new">new</value>
+            <value id="assigned">assigned</value>
+            <value id="open">open</value>
+            <value id="closed">closed</value>
+          </values>
+          <default_value _delta="redefine">new</default_value>
+        </field>
+        <field id="planned_start_date" xsi:type="AttributeDateTime" _delta="define">
+          <sql>planned_start_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="start_date">
+          <is_null_allowed _delta="redefine">true</is_null_allowed>
+        </field>
+        <field id="planned_end_date" xsi:type="AttributeDateTime" _delta="define">
+          <sql>planned_end_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="end_date">
+          <is_null_allowed _delta="redefine">true</is_null_allowed>
+        </field>
+        <field id="solution" xsi:type="AttributeText" _delta="define">
+          <sql>solution</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="functionalcis_list" xsi:type="AttributeLinkedSetIndirect" _delta="define">
+            <linked_class>lnkFunctionalCIToWorkOrder</linked_class>
+            <ext_key_to_me>workorder_id</ext_key_to_me>
+            <count_min>0</count_min>
+            <count_max>0</count_max>
+            <ext_key_to_remote>functionalci_id</ext_key_to_remote>
+            <duplicates/>
+        </field>
+      </fields>
+      <methods>
+        <method id="DBInsertNoReload" _delta="define">
+          <static>false</static>
+          <access>public</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[
+  public function DBInsertNoReload()
+  {
+    $iNextId = ItopCounter::IncClass(get_class($this));
+    $sRef = $this->MakeWorkOrderRef($iNextId);
+    $this->SetIfNull('ref', $sRef);
+    $iKey = parent::DBInsertNoReload();
+    return $iKey;
+  }
+  ]]>
+          </code>
+        </method>
+        <method id="MakeWorkOrderRef" _delta="define">
+          <static>false</static>
+          <access>protected</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[
+  protected function MakeWorkOrderRef($iNextId)
+  {
+    $sFormat = 'W-%06d';
+    return sprintf($sFormat, $iNextId);
+  }
+  ]]>
+          </code>
+        </method>
+        <method id="MapContextParam" _delta="define">
+          <static>true</static>
+          <access>public</access>
+          <type>Overload-ExNihilo</type>
+          <code><![CDATA[	public static function MapContextParam($sContextParam)
+	{
+		if ($sContextParam == 'org_id')
+		{
+			return 'ticket_org_id';
+		}
+		else
+		{
+			return null;
+		}
+	}]]></code>
+        </method>
+      </methods>
+      <lifecycle _delta="redefine">
+        <attribute>status</attribute>
+        <stimuli>
+          <stimulus id="ev_assign" xsi:type="StimulusUserAction"/>
+          <stimulus id="ev_start" xsi:type="StimulusUserAction"/>
+          <stimulus id="ev_close" xsi:type="StimulusUserAction"/>
+        </stimuli>
+        <states>
+          <state id="new">
+            <flags>
+              <attribute id="team_id">
+                <mandatory/>
+              </attribute>
+              <attribute id="planned_start_date">
+                <mandatory/>
+              </attribute>
+              <attribute id="planned_end_date">
+                <mandatory/>
+              </attribute>
+              <attribute id="description">
+                <mandatory/>
+              </attribute>
+              <attribute id="solution">
+                <hidden/>
+              </attribute>
+              <attribute id="start_date">
+                <hidden/>
+              </attribute>
+              <attribute id="end_date">
+                <hidden/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_assign">
+                <target>assigned</target>
+                <actions/>
+              </transition>
+            </transitions>
+          </state>
+          <state id="assigned">
+            <inherit_flags_from>new</inherit_flags_from>
+            <flags>
+              <attribute id="team_id">
+                <must_prompt/>
+                <mandatory/>
+              </attribute>
+              <attribute id="agent_id">
+                <must_prompt/>
+                <mandatory/>
+              </attribute>
+              <attribute id="planned_start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="planned_end_date">
+                <read_only/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_start">
+                <target>open</target>
+                <actions>
+                  <action>
+                    <verb>SetCurrentDate</verb>
+                    <params>
+                      <param xsi:type="attcode">start_date</param>
+                    </params>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+          <state id="open">
+            <inherit_flags_from>assigned</inherit_flags_from>
+            <flags>
+              <attribute id="team_id">
+                <mandatory/>
+              </attribute>
+              <attribute id="agent_id">
+                <mandatory/>
+              </attribute>
+              <attribute id="start_date">
+                <read_only/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_close">
+                <target>closed</target>
+                <flags>
+                  <attribute id="solution">
+                    <mandatory/>
+                    <must_prompt/>
+                  </attribute>
+                </flags>
+                <actions>
+                  <action>
+                    <verb>SetCurrentDate</verb>
+                    <params>
+                      <param xsi:type="attcode">end_date</param>
+                    </params>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+          <state id="closed">
+            <inherit_flags_from>open</inherit_flags_from>
+            <flags>
+              <attribute id="solution">
+                <read_only/>
+              </attribute>
+              <attribute id="start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="end_date">
+                <read_only/>
+              </attribute>
+            </flags>
+            <transitions/>
+          </state>
+        </states>
+      </lifecycle>
+      <presentation>
+        <details>
+          <items>
+            <item id="ticket_org_id" _delta="define">
+              <rank>32</rank>
+            </item>
+            <item id="solution" _delta="define">
+              <rank>62</rank>
+            </item>
+            <item id="planned_start_date" _delta="define">
+              <rank>65</rank>
+            </item>
+            <item id="planned_end_date" _delta="define">
+              <rank>75</rank>
+            </item>
+            <item id="functionalcis_list" _delta="define">
+              <rank>100</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="ref" _delta="define">
+              <rank>32</rank>
+            </item>
+            <item id="ticket_org_id" _delta="define">
+              <rank>34</rank>
+            </item>
+            <item id="planned_start_date" _delta="define">
+              <rank>65</rank>
+            </item>
+            <item id="planned_end_date" _delta="define">
+              <rank>75</rank>
+            </item>
+          </items>
+        </search>
+        <default_search _delta="force">
+          <items>
+            <item id="ref">
+              <rank>10</rank>
+            </item>
+            <item id="name">
+              <rank>20</rank>
+            </item>
+            <item id="status">
+              <rank>30</rank>
+            </item>
+            <item id="ticket_id">
+              <rank>40</rank>
+            </item>
+            <item id="ticket_org_id">
+              <rank>50</rank>
+            </item>
+            <item id="team_id">
+              <rank>60</rank>
+            </item>
+          </items>
+        </default_search>
+        <list>
+          <items>
+            <item id="name" _delta="define">
+              <rank>5</rank>
+            </item>
+            <item id="ticket_org_id" _delta="define">
+              <rank>22</rank>
+            </item>
+            <item id="planned_start_date" _rename_from="start_date"/>
+            <item id="planned_end_date" _rename_from="end_date"/>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="lnkFunctionalCIToWorkOrder" _delta="define">
+        <parent>cmdbAbstractObject</parent>
+        <properties>
+            <is_link>1</is_link>
+            <category>bizmodel</category>
+            <abstract>false</abstract>
+            <key_type>autoincrement</key_type>
+            <db_table>lnkfunctionalcitoworkorder</db_table>
+            <db_key_field>id</db_key_field>
+            <db_final_class_field/>
+            <naming>
+                <attributes>
+                    <attribute id="workorder_id"/>
+                    <attribute id="functionalci_id"/>
+                </attributes>
+            </naming>
+            <display_template/>
+            <icon/>
+            <reconciliation>
+                <attributes>
+                    <attribute id="workorder_id"/>
+                    <attribute id="functionalci_id"/>
+                </attributes>
+            </reconciliation>
+        </properties>
+        <fields>
+            <field id="workorder_id" xsi:type="AttributeExternalKey">
+                <sql>workorder_id</sql>
+                <target_class>WorkOrder</target_class>
+                <is_null_allowed>false</is_null_allowed>
+                <on_target_delete>DEL_AUTO</on_target_delete>
+            </field>
+            <field id="workorder_ref" xsi:type="AttributeExternalField">
+                <extkey_attcode>workorder_id</extkey_attcode>
+                <target_attcode>ref</target_attcode>
+            </field>
+            <field id="workorder_name" xsi:type="AttributeExternalField">
+                <extkey_attcode>workorder_id</extkey_attcode>
+                <target_attcode>name</target_attcode>
+            </field>
+            <field id="functionalci_id" xsi:type="AttributeExternalKey">
+                <sql>functionalci_id</sql>
+                <target_class>FunctionalCI</target_class>
+                <is_null_allowed>false</is_null_allowed>
+                <on_target_delete>DEL_AUTO</on_target_delete>
+            </field>
+            <field id="functionalci_name" xsi:type="AttributeExternalField">
+                <extkey_attcode>functionalci_id</extkey_attcode>
+                <target_attcode>name</target_attcode>
+            </field>
+        </fields>
+        <methods/>
+        <presentation>
+            <details>
+                <items>
+                    <item id="workorder_id">
+                        <rank>10</rank>
+                    </item>
+                    <item id="workorder_name">
+                        <rank>15</rank>
+                    </item>
+                    <item id="functionalci_id">
+                        <rank>20</rank>
+                    </item>
+                </items>
+            </details>
+            <search>
+                <items>
+                    <item id="workorder_id">
+                        <rank>10</rank>
+                    </item>
+                    <item id="functionalci_id">
+                        <rank>20</rank>
+                    </item>
+                </items>
+            </search>
+            <list>
+                <items>
+                    <item id="workorder_id">
+                        <rank>10</rank>
+                    </item>
+                    <item id="workorder_name">
+                        <rank>15</rank>
+                    </item>
+                    <item id="functionalci_id">
+                        <rank>20</rank>
+                    </item>
+                </items>
+            </list>
+        </presentation>
+    </class>
+  </classes>
+  <menus>
+  </menus>
+  <user_rights>
+    <groups>
+      <group id="Ticketing">
+        <classes>
+          <class id="lnkFunctionalCIToWorkOrder" _delta="define"/>
+        </classes>
+      </group>
+    </groups>
+    <profiles>
+      <!--Service Desk Agent-->
+      <profile id="4">
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="stimulus:ev_assign" _delta="define">allow</action>
+              <action id="stimulus:ev_start" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <!--Support Agent-->
+      <profile id="5">
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="stimulus:ev_assign" _delta="define">allow</action>
+              <action id="stimulus:ev_start" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <!--Problem Manager-->
+      <profile id="6">
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="stimulus:ev_assign" _delta="define">allow</action>
+              <action id="stimulus:ev_start" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <!--Change Implementor-->
+      <profile id="7">
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="stimulus:ev_assign" _delta="define">allow</action>
+              <action id="stimulus:ev_start" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <!--Change Supervisor-->
+      <profile id="8">
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="stimulus:ev_assign" _delta="define">allow</action>
+              <action id="stimulus:ev_start" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <!--Change Approver-->
+      <profile id="9">
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="stimulus:ev_assign" _delta="define">allow</action>
+              <action id="stimulus:ev_start" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+    </profiles>
+  </user_rights>
+</itop_design>

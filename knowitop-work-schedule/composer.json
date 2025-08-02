@@ -1,0 +1,21 @@
+{
+  "config": {
+    "classmap-authoritative": true
+  },
+  "autoload": {
+    "psr-4": {
+      "Knowitop\\iTop\\Extension\\WorkSchedule\\": "src"
+    }
+  },
+  "name": "knowitop/knowitop-work-schedule",
+  "type": "itop-extension",
+  "description": "Work Schedule",
+  "require": {
+    "composer-runtime-api": "^2.0",
+    "dragonmantank/cron-expression": "^3.3"
+  },
+  "scripts": {
+    "test": "cd /var/www/html/test && php vendor/bin/phpunit  ../extensions/knowitop-work-schedule-test/test",
+    "test-docker": "docker-compose exec -T itop bash -c 'cd /var/www/html/test; php vendor/bin/phpunit ../extensions/knowitop-work-schedule-test/test'"
+  }
+}

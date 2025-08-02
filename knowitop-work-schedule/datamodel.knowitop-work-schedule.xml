@@ -1,0 +1,1655 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.6">
+  <constants>
+    <constant id="WO_START_DATE_ATTR" xsi:type="string" _delta="define"><![CDATA[planned_start_date]]></constant>
+    <constant id="WO_END_DATE_ATTR" xsi:type="string" _delta="define"><![CDATA[planned_end_date]]></constant>
+  </constants>
+  <classes>
+    <class id="WorkSchedule" _delta="define">
+      <parent>Ticket</parent>
+      <php_parent>
+        <name>\Knowitop\iTop\Extension\WorkSchedule\Model\AbstractWorkSchedule</name>
+      </php_parent>
+      <properties>
+        <comment><![CDATA[/**
+ * WorkSchedule class for Work Order Management module
+ *
+ * @copyright   Copyright (C) 2022 Vladimir Kunin https://knowitop.ru
+ */]]></comment>
+        <category>bizmodel,searchable,structure</category>
+        <abstract>true</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>ticket_workschedule</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <attributes>
+            <attribute id="title"/>
+          </attributes>
+        </naming>
+        <display_template/>
+        <icon>assets/img/icons8-timetable-48.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="title"/>
+            <attribute id="org_id"/>
+            <attribute id="org_name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="status" xsi:type="AttributeEnum">
+          <values>
+            <value id="active">active</value>
+            <value id="inactive">inactive</value>
+          </values>
+          <sql>status</sql>
+          <default_value>inactive</default_value>
+          <is_null_allowed>false</is_null_allowed>
+          <display_style>select</display_style>
+        </field>
+        <field id="service_id" xsi:type="AttributeExternalKey">
+          <sql>service_id</sql>
+          <target_class>Service</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+          <allow_target_creation>false</allow_target_creation>
+        </field>
+        <field id="service_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>service_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="servicesubcategory_id" xsi:type="AttributeExternalKey">
+          <filter><![CDATA[SELECT ServiceSubcategory WHERE service_id = :this->service_id]]></filter>
+          <dependencies>
+            <attribute id="service_id"/>
+          </dependencies>
+          <sql>servicesubcategory_id</sql>
+          <target_class>ServiceSubcategory</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+          <allow_target_creation>false</allow_target_creation>
+        </field>
+        <field id="servicesubcategory_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>servicesubcategory_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="pre_create_interval" xsi:type="AttributeDuration">
+          <sql>pre_create_interval</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <!-- Calculated dates -->
+        <field id="next_wo_create_date" xsi:type="AttributeDateTime">
+          <sql>next_wo_create_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="next_wo_start_date" xsi:type="AttributeDateTime">
+          <sql>next_wo_start_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="prev_wo_start_date" xsi:type="AttributeDateTime">
+          <sql>prev_wo_start_date</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="document_list" xsi:type="AttributeLinkedSetIndirect">
+          <linked_class>lnkDocumentToTicket</linked_class>
+          <ext_key_to_me>ticket_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <ext_key_to_remote>document_id</ext_key_to_remote>
+          <duplicates/>
+        </field>
+        <!-- WorkOrder template attributes -->
+        <field id="wo_template_id" xsi:type="AttributeExternalKey">
+          <sql>wo_template_id</sql>
+          <filter><![CDATA[SELECT WorkOrderTemplate WHERE status = 'active']]></filter>
+          <target_class>WorkOrderTemplate</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="wo_template_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>wo_template_id</extkey_attcode>
+          <target_attcode>wo_name</target_attcode>
+        </field>
+        <field id="wo_template_description" xsi:type="AttributeExternalField">
+          <extkey_attcode>wo_template_id</extkey_attcode>
+          <target_attcode>wo_description</target_attcode>
+        </field>
+        <field id="wo_template_team" xsi:type="AttributeExternalField">
+          <extkey_attcode>wo_template_id</extkey_attcode>
+          <target_attcode>wo_team_id</target_attcode>
+        </field>
+        <field id="wo_template_agent" xsi:type="AttributeExternalField">
+          <extkey_attcode>wo_template_id</extkey_attcode>
+          <target_attcode>wo_agent_id</target_attcode>
+        </field>
+        <field id="wo_template_duration" xsi:type="AttributeExternalField">
+          <extkey_attcode>wo_template_id</extkey_attcode>
+          <target_attcode>wo_duration</target_attcode>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="contacts_list">
+              <rank>10</rank>
+            </item>
+            <item id="document_list">
+              <rank>20</rank>
+            </item>
+            <item id="functionalcis_list">
+              <rank>30</rank>
+            </item>
+            <item id="workorders_list">
+              <rank>40</rank>
+            </item>
+            <item id="col:col1">
+              <rank>60</rank>
+              <items>
+                <item id="fieldset:WorkSchedule:baseinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="title">
+                      <rank>10</rank>
+                    </item>
+                    <item id="org_id">
+                      <rank>20</rank>
+                    </item>
+                    <item id="service_id">
+                      <rank>40</rank>
+                    </item>
+                    <item id="servicesubcategory_id">
+                      <rank>50</rank>
+                    </item>
+                    <item id="start_date">
+                      <rank>60</rank>
+                    </item>
+                    <item id="end_date">
+                      <rank>70</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:schedule">
+                  <rank>15</rank>
+                  <items>
+                    <item id="pre_create_interval">
+                      <rank>10</rank>
+                    </item>
+                    <item id="next_wo_create_date">
+                      <rank>20</rank>
+                    </item>
+                    <item id="prev_wo_start_date">
+                      <rank>30</rank>
+                    </item>
+                    <item id="next_wo_start_date">
+                      <rank>40</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="description">
+                      <rank>10</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>70</rank>
+              <items>
+                <item id="fieldset:WorkSchedule:contacts">
+                  <rank>20</rank>
+                  <items>
+                    <item id="caller_id">
+                      <rank>10</rank>
+                    </item>
+                    <item id="team_id">
+                      <rank>20</rank>
+                    </item>
+                    <item id="agent_id">
+                      <rank>30</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:template">
+                  <rank>30</rank>
+                  <items>
+                    <item id="wo_template_id">
+                      <rank>10</rank>
+                    </item>
+                    <item id="wo_template_description">
+                      <rank>20</rank>
+                    </item>
+                    <item id="wo_template_team">
+                      <rank>30</rank>
+                    </item>
+                    <item id="wo_template_agent">
+                      <rank>40</rank>
+                    </item>
+                    <item id="wo_template_duration">
+                      <rank>50</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <default-search>
+          <items>
+            <item id="title">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="service_id">
+              <rank>40</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>50</rank>
+            </item>
+          </items>
+        </default-search>
+        <search>
+          <items>
+            <item id="title">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="caller_id">
+              <rank>25</rank>
+            </item>
+            <item id="team_id">
+              <rank>30</rank>
+            </item>
+            <item id="agent_id">
+              <rank>40</rank>
+            </item>
+            <item id="service_id">
+              <rank>40</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>50</rank>
+            </item>
+            <item id="start_date">
+              <rank>70</rank>
+            </item>
+            <item id="end_date">
+              <rank>80</rank>
+            </item>
+            <item id="next_wo_create_date">
+              <rank>90</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="org_id">
+              <rank>10</rank>
+            </item>
+            <item id="service_id">
+              <rank>30</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>40</rank>
+            </item>
+            <item id="next_wo_create_date">
+              <rank>50</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="IntervalWorkSchedule" _delta="define">
+      <parent>WorkSchedule</parent>
+      <properties>
+        <comment><![CDATA[/**
+ * IntervalWorkSchedule class for Work Order Management module
+ *
+ * @copyright   Copyright (C) 2019 Vladimir Kunin https://knowitop.ru
+ */]]></comment>
+        <category>bizmodel,searchable,structure</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>ticket_intervalworkschedule</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <attributes>
+            <attribute id="title"/>
+          </attributes>
+        </naming>
+        <display_template/>
+        <icon>assets/img/icons8-timetable-48.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="title"/>
+            <attribute id="org_id"/>
+            <attribute id="org_name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="work_interval_value" xsi:type="AttributeInteger">
+          <sql>work_interval_value</sql>
+          <default_value/>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="work_interval_unit" xsi:type="AttributeEnum">
+          <sql>work_interval_unit</sql>
+          <values>
+            <value id="day">day</value>
+            <value id="week">week</value>
+            <value id="month">month</value>
+          </values>
+          <default_value>day</default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="work_start_time" xsi:type="AttributeString">
+          <sql>work_start_time</sql>
+          <default_value>12:00</default_value>
+          <is_null_allowed>false</is_null_allowed>
+          <!--TODO: изменяемый формат времени-->
+          <validation_pattern>^([0,1][0-9]|2[0-3]):[0-5][0-9]$</validation_pattern>
+        </field>
+      </fields>
+      <lifecycle>
+        <attribute>status</attribute>
+        <highlight_scale>
+          <item id="active">
+            <rank>1</rank>
+            <color>HIGHLIGHT_CLASS_OK</color>
+            <icon>assets/img/icons8-timetable-48.png</icon>
+          </item>
+        </highlight_scale>
+        <stimuli>
+          <stimulus id="ev_activate" xsi:type="StimulusUserAction"/>
+          <stimulus id="ev_deactivate" xsi:type="StimulusUserAction"/>
+        </stimuli>
+        <states>
+          <state id="inactive">
+            <flags>
+              <attribute id="prev_wo_start_date">
+                <hidden/>
+              </attribute>
+              <attribute id="next_wo_start_date">
+                <hidden/>
+              </attribute>
+              <attribute id="next_wo_create_date">
+                <hidden/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_activate">
+                <target>active</target>
+                <flags>
+                  <attribute id="work_interval_value">
+                    <mandatory/>
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="work_interval_unit">
+                    <mandatory/>
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="work_start_time">
+                    <mandatory/>
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="pre_create_interval">
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="start_date">
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="end_date">
+                    <must_prompt/>
+                  </attribute>
+                </flags>
+                <actions>
+                  <action>
+                    <verb>ComputeNextDates</verb>
+                    <params/>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+          <state id="active">
+            <highlight>
+              <code>active</code>
+            </highlight>
+            <inherit_flags_from>inactive</inherit_flags_from>
+            <flags>
+              <attribute id="start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="end_date">
+                <read_only/>
+              </attribute>
+              <attribute id="prev_wo_start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="next_wo_start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="next_wo_create_date">
+                <read_only/>
+              </attribute>
+              <attribute id="pre_create_interval">
+                <read_only/>
+              </attribute>
+              <attribute id="work_interval_value">
+                <read_only/>
+              </attribute>
+              <attribute id="work_interval_unit">
+                <read_only/>
+              </attribute>
+              <attribute id="work_start_time">
+                <read_only/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_deactivate">
+                <target>inactive</target>
+                <actions>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="attcode">next_wo_create_date</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="attcode">prev_wo_start_date</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="attcode">next_wo_start_date</param>
+                    </params>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+        </states>
+      </lifecycle>
+      <methods>
+        <method id="FindNextWorkOrderStartDate">
+          <static>false</static>
+          <access>public</access>
+          <comment><![CDATA[	/**
+	 * Find the date the when work order should be STARTED within schedule's half-open interval [start_date, end_date).
+	 *
+	 * @param string $sCurrentDate
+	 * @param bool $bIncludeCurrentDate
+	 *
+	 * @return string|null
+	 * @throws \CoreException
+	 * @throws \Exception
+	 */]]></comment>
+          <type>Overload-ExNihilo</type>
+          <code><![CDATA[	public function FindNextWorkOrderStartDate(?string $sCurrentDate = '', bool $bIncludeCurrentDate = false): ?string
+	{
+		$sCurrentDate = $sCurrentDate ?: $this->sNow;
+		// if the start_date hasn't yet come (=> work schedule is turned off now)
+		// we use it as relative calculation date to find first date after start_date (including start_date itself).
+		$sStartDate = $this->Get('start_date');
+		if ($sStartDate > $sCurrentDate)
+		{
+			$sCurrentDate = $sStartDate;
+			$bIncludeCurrentDate = true;
+		}
+		// Если нет наряда (график новый) => след. дата относительно текущей.
+		$oCurrentDate = DateTime::createFromFormat(AttributeDateTime::GetInternalFormat(), $sCurrentDate);
+		if ($this->HasOpenWorkOrders())
+		{
+			// Если есть открытый наряд => не создаем вообще, пока не закрыли прошлый
+			return null;
+		}
+		elseif(($oWorkOrder = $this->GetLastClosedWorkOrder()) !== null)
+		{
+			// Если есть закрытый наряд => след. дата через интервал относительно его фактического завершения.
+			$oLastWorkOrderEndDate = DateTime::createFromFormat(AttributeDateTime::GetInternalFormat(), $oWorkOrder->Get('end_date'));
+			$oLastWorkOrderEndDate->modify("+".$this->Get("work_interval_value")." ".$this->Get("work_interval_unit"));
+			if ($oLastWorkOrderEndDate > $oCurrentDate) {
+				// по какой причине дата завершения наряда + интервал работ < текущей относительной даты расчета (??)
+				$oCurrentDate = $oLastWorkOrderEndDate;
+			}
+		}
+		$oWorkStartTime = new DateTime($this->Get("work_start_time"));
+		$oCurrentDate->setTime($oWorkStartTime->format("G"), $oWorkStartTime->format("i"));
+
+		if ($oCurrentDate->format(AttributeDateTime::GetInternalFormat()) < $sCurrentDate)
+		{
+			$oCurrentDate->modify('+1 day');
+		}
+		elseif ($oCurrentDate->format(AttributeDateTime::GetInternalFormat()) == $sCurrentDate && !$bIncludeCurrentDate)
+		{
+			$oCurrentDate->modify('+1 day');
+		}
+
+		$sWorkOrderStartDate = $oCurrentDate->format(AttributeDateTime::GetInternalFormat());
+
+		$sEndDate = $this->Get('end_date');
+		if ($sEndDate && $sWorkOrderStartDate >= $sEndDate)
+		{
+			// work schedule is finished, no further work orders are required
+			return null;
+		}
+
+		return $sWorkOrderStartDate;
+	}]]></code>
+        </method>
+        <method id="HasOpenWorkOrders">
+          <static>false</static>
+          <access>private</access>
+          <comment><![CDATA[	/**
+	 * @return bool
+	 * @throws \OQLException
+	 */]]></comment>
+          <type>Overload-ExNihilo</type>
+          <code><![CDATA[
+	private function HasOpenWorkOrders(): bool
+	{
+		$sOQL = "SELECT WorkOrder WHERE ticket_id = :ticket_id AND status != 'closed'";
+
+		return MetaModel::GetObjectFromOQL($sOQL, ['ticket_id' => $this->GetKey()]) !== null;
+	}
+        ]]></code>
+        </method>
+        <method id="GetLastClosedWorkOrder">
+          <static>false</static>
+          <access>private</access>
+          <comment><![CDATA[	/**
+	 * @return \WorkOrder|null
+	 * @throws \CoreException
+	 * @throws \CoreUnexpectedValue
+	 * @throws \MySQLException
+	 * @throws \OQLException
+	 */]]></comment>
+          <type>Overload-ExNihilo</type>
+          <code><![CDATA[	private function GetLastClosedWorkOrder(): ?WorkOrder
+	{
+		$sOQL = "SELECT WorkOrder WHERE ticket_id = :ticket_id AND status = 'closed'";
+		$oSet = new DBObjectSet(DBObjectSearch::FromOQL($sOQL, ['ticket_id' => $this->GetKey()]), ['end_date' => false]);
+
+		return $oSet->Fetch();
+	}
+          ]]></code>
+        </method>
+      </methods>
+      <presentation>
+        <details>
+          <items>
+            <item id="contacts_list">
+              <rank>10</rank>
+            </item>
+            <item id="document_list">
+              <rank>20</rank>
+            </item>
+            <item id="functionalcis_list">
+              <rank>30</rank>
+            </item>
+            <item id="workorders_list">
+              <rank>40</rank>
+            </item>
+            <item id="col:col1">
+              <rank>60</rank>
+              <items>
+                <item id="fieldset:WorkSchedule:baseinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="title">
+                      <rank>10</rank>
+                    </item>
+                    <item id="org_id">
+                      <rank>20</rank>
+                    </item>
+                    <item id="status">
+                      <rank>30</rank>
+                    </item>
+                    <item id="service_id">
+                      <rank>40</rank>
+                    </item>
+                    <item id="servicesubcategory_id">
+                      <rank>50</rank>
+                    </item>
+                    <item id="start_date">
+                      <rank>60</rank>
+                    </item>
+                    <item id="end_date">
+                      <rank>70</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:schedule">
+                  <rank>15</rank>
+                  <items>
+                    <item id="work_interval_value">
+                      <rank>10</rank>
+                    </item>
+                    <item id="work_interval_unit">
+                      <rank>15</rank>
+                    </item>
+                    <item id="work_start_time">
+                      <rank>20</rank>
+                    </item>
+                    <item id="pre_create_interval">
+                      <rank>25</rank>
+                    </item>
+                    <item id="next_wo_create_date">
+                      <rank>30</rank>
+                    </item>
+                    <item id="next_wo_start_date">
+                      <rank>40</rank>
+                    </item>
+                    <item id="prev_wo_start_date">
+                      <rank>50</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="description">
+                      <rank>10</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>70</rank>
+              <items>
+                <item id="fieldset:WorkSchedule:contacts">
+                  <rank>20</rank>
+                  <items>
+                    <item id="caller_id">
+                      <rank>10</rank>
+                    </item>
+                    <item id="team_id">
+                      <rank>20</rank>
+                    </item>
+                    <item id="agent_id">
+                      <rank>30</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:template">
+                  <rank>30</rank>
+                  <items>
+                    <item id="wo_template_id">
+                      <rank>10</rank>
+                    </item>
+                    <item id="wo_template_description">
+                      <rank>20</rank>
+                    </item>
+                    <item id="wo_template_team">
+                      <rank>30</rank>
+                    </item>
+                    <item id="wo_template_agent">
+                      <rank>40</rank>
+                    </item>
+                    <item id="wo_template_duration">
+                      <rank>50</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <default-search>
+          <items>
+            <item id="title">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="service_id">
+              <rank>40</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>50</rank>
+            </item>
+            <item id="status">
+              <rank>60</rank>
+            </item>
+          </items>
+        </default-search>
+        <search>
+          <items>
+            <item id="title">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="caller_id">
+              <rank>25</rank>
+            </item>
+            <item id="team_id">
+              <rank>30</rank>
+            </item>
+            <item id="agent_id">
+              <rank>40</rank>
+            </item>
+            <item id="service_id">
+              <rank>40</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>50</rank>
+            </item>
+            <item id="status">
+              <rank>60</rank>
+            </item>
+            <item id="start_date">
+              <rank>70</rank>
+            </item>
+            <item id="end_date">
+              <rank>80</rank>
+            </item>
+            <item id="next_wo_create_date">
+              <rank>90</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="org_id">
+              <rank>10</rank>
+            </item>
+            <item id="status">
+              <rank>20</rank>
+            </item>
+            <item id="service_id">
+              <rank>30</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>40</rank>
+            </item>
+            <item id="next_wo_create_date">
+              <rank>60</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="FixedWorkSchedule" _delta="define">
+      <parent>WorkSchedule</parent>
+      <properties>
+        <comment><![CDATA[/**
+ * FixedWorkSchedule class for Work Order Management module
+ *
+ * @copyright   Copyright (C) 2019 Vladimir Kunin https://knowitop.ru
+ */]]></comment>
+        <category>bizmodel,searchable,structure</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>ticket_fixedworkschedule</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <attributes>
+            <attribute id="title"/>
+          </attributes>
+        </naming>
+        <display_template/>
+        <icon>assets/img/icons8-timetable-48.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="title"/>
+            <attribute id="org_id"/>
+            <attribute id="org_name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="work_periodicity_pattern" xsi:type="Knowitop\iTop\Extension\WorkSchedule\Attribute\AttributeCronExpression">
+          <sql>work_periodicity_pattern</sql>
+          <default_value/>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+      </fields>
+      <lifecycle>
+        <attribute>status</attribute>
+        <highlight_scale>
+          <item id="active">
+            <rank>1</rank>
+            <color>HIGHLIGHT_CLASS_OK</color>
+            <icon>assets/img/icons8-timetable-48.png</icon>
+          </item>
+        </highlight_scale>
+        <stimuli>
+          <stimulus id="ev_activate" xsi:type="StimulusUserAction"/>
+          <stimulus id="ev_deactivate" xsi:type="StimulusUserAction"/>
+        </stimuli>
+        <states>
+          <state id="inactive">
+            <flags>
+              <attribute id="prev_wo_start_date">
+                <hidden/>
+              </attribute>
+              <attribute id="next_wo_start_date">
+                <hidden/>
+              </attribute>
+              <attribute id="next_wo_create_date">
+                <hidden/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_activate">
+                <target>active</target>
+                <flags>
+                  <attribute id="work_periodicity_pattern">
+                    <mandatory/>
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="pre_create_interval">
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="start_date">
+                    <must_prompt/>
+                  </attribute>
+                  <attribute id="end_date">
+                    <must_prompt/>
+                  </attribute>
+                </flags>
+                <actions>
+                  <action>
+                    <verb>ComputeNextDates</verb>
+                    <params/>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+          <state id="active">
+            <highlight>
+              <code>active</code>
+            </highlight>
+            <inherit_flags_from>inactive</inherit_flags_from>
+            <flags>
+              <attribute id="start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="end_date">
+                <read_only/>
+              </attribute>
+              <attribute id="prev_wo_start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="next_wo_start_date">
+                <read_only/>
+              </attribute>
+              <attribute id="next_wo_create_date">
+                <read_only/>
+              </attribute>
+              <attribute id="pre_create_interval">
+                <read_only/>
+              </attribute>
+              <attribute id="work_periodicity_pattern">
+                <read_only/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_deactivate">
+                <target>inactive</target>
+                <actions>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="attcode">next_wo_create_date</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="attcode">prev_wo_start_date</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="attcode">next_wo_start_date</param>
+                    </params>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+        </states>
+      </lifecycle>
+      <methods>
+        <method id="FindNextWorkOrderStartDate">
+          <static>false</static>
+          <access>public</access>
+          <comment><![CDATA[	/**
+	 * Find the date the when work order should be STARTED within schedule's half-open interval [start_date, end_date).
+	 *
+	 * @param string $sCurrentDate
+	 * @param bool $bIncludeCurrentDate
+	 *
+	 * @return string|null
+	 * @throws \CoreException
+	 */]]></comment>
+          <type>Overload-ExNihilo</type>
+          <code><![CDATA[	public function FindNextWorkOrderStartDate(?string $sCurrentDate = '', bool $bIncludeCurrentDate = false): ?string
+	{
+		$sCurrentDate = $sCurrentDate ?: $this->sNow;
+		// if the start_date hasn't yet come (=> work schedule is turned off now)
+		// we use it as relative calculation date to find first date after start_date (including start_date itself).
+		$sStartDate = $this->Get('start_date');
+		if ($sStartDate > $sCurrentDate)
+		{
+			$sCurrentDate = $sStartDate;
+			$bIncludeCurrentDate = true;
+		}
+		try
+		{
+			$oCron = Cron\CronExpression::factory($this->Get('work_periodicity_pattern'));
+			$sWorkOrderStartDate = $oCron->getNextRunDate($sCurrentDate, 0,
+				$bIncludeCurrentDate)->format(AttributeDateTime::GetInternalFormat());
+		} catch (Exception $e)
+		{
+			// TODO: cron error handling
+			error_log($e);
+
+			return null;
+		}
+		$sEndDate = $this->Get('end_date');
+		if ($sEndDate && $sWorkOrderStartDate >= $sEndDate)
+		{
+			// work schedule is finished, no further work orders are required
+			return null;
+		}
+
+		return $sWorkOrderStartDate;
+	}
+        ]]></code>
+        </method>
+        <method id="DisplayBareProperties">
+          <static>false</static>
+          <access>public</access>
+          <type>Overload-BDObject</type>
+          <code><![CDATA[	public function DisplayBareProperties(WebPage $oPage, $bEditMode = false, $sPrefix = '', $aExtraParams = array())
+	{
+		if ($bEditMode && !$this->IsAttributeReadOnlyForCurrentState('work_periodicity_pattern')) {
+			\Knowitop\iTop\Extension\WorkSchedule\Helper\AttributeCronExpressionHelper::DisplayCronWidget($oPage, 'work_periodicity_pattern');
+		}
+		return parent::DisplayBareProperties($oPage, $bEditMode, $sPrefix, $aExtraParams);
+	}]]></code>
+        </method>
+        <method id="DisplayStimulusForm">
+          <static>false</static>
+          <access>public</access>
+          <type>Overload-BDObject</type>
+          <code><![CDATA[	public function DisplayStimulusForm(WebPage $oPage, $sStimulus, $aPrefillFormParam = null, $bDisplayBareProperties = true)
+	{
+		$iFlags = $this->GetTransitionFlags('work_periodicity_pattern', $sStimulus);
+		if ($iFlags & (OPT_ATT_MUSTPROMPT | OPT_ATT_MUSTCHANGE))
+		{
+			\Knowitop\iTop\Extension\WorkSchedule\Helper\AttributeCronExpressionHelper::DisplayCronWidget($oPage, 'work_periodicity_pattern');
+		}
+		return parent::DisplayStimulusForm($oPage, $sStimulus, $aPrefillFormParam, $bDisplayBareProperties);
+	}]]></code>
+        </method>
+      </methods>
+      <presentation>
+        <details>
+          <items>
+            <item id="contacts_list">
+              <rank>10</rank>
+            </item>
+            <item id="document_list">
+              <rank>20</rank>
+            </item>
+            <item id="functionalcis_list">
+              <rank>30</rank>
+            </item>
+            <item id="workorders_list">
+              <rank>40</rank>
+            </item>
+            <item id="col:col1">
+              <rank>60</rank>
+              <items>
+                <item id="fieldset:WorkSchedule:baseinfo">
+                  <rank>10</rank>
+                  <items>
+                    <item id="title">
+                      <rank>10</rank>
+                    </item>
+                    <item id="org_id">
+                      <rank>20</rank>
+                    </item>
+                    <item id="status">
+                      <rank>30</rank>
+                    </item>
+                    <item id="service_id">
+                      <rank>40</rank>
+                    </item>
+                    <item id="servicesubcategory_id">
+                      <rank>50</rank>
+                    </item>
+                    <item id="start_date">
+                      <rank>60</rank>
+                    </item>
+                    <item id="end_date">
+                      <rank>70</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:schedule">
+                  <rank>15</rank>
+                  <items>
+                    <item id="work_periodicity_pattern">
+                      <rank>10</rank>
+                    </item>
+                    <item id="pre_create_interval">
+                      <rank>20</rank>
+                    </item>
+                    <item id="next_wo_create_date">
+                      <rank>30</rank>
+                    </item>
+                    <item id="next_wo_start_date">
+                      <rank>40</rank>
+                    </item>
+                    <item id="prev_wo_start_date">
+                      <rank>50</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:moreinfo">
+                  <rank>20</rank>
+                  <items>
+                    <item id="description">
+                      <rank>10</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+            <item id="col:col2">
+              <rank>70</rank>
+              <items>
+                <item id="fieldset:WorkSchedule:contacts">
+                  <rank>20</rank>
+                  <items>
+                    <item id="caller_id">
+                      <rank>10</rank>
+                    </item>
+                    <item id="team_id">
+                      <rank>20</rank>
+                    </item>
+                    <item id="agent_id">
+                      <rank>30</rank>
+                    </item>
+                  </items>
+                </item>
+                <item id="fieldset:WorkSchedule:template">
+                  <rank>30</rank>
+                  <items>
+                    <item id="wo_template_id">
+                      <rank>10</rank>
+                    </item>
+                    <item id="wo_template_description">
+                      <rank>20</rank>
+                    </item>
+                    <item id="wo_template_team">
+                      <rank>30</rank>
+                    </item>
+                    <item id="wo_template_agent">
+                      <rank>40</rank>
+                    </item>
+                    <item id="wo_template_duration">
+                      <rank>50</rank>
+                    </item>
+                  </items>
+                </item>
+              </items>
+            </item>
+          </items>
+        </details>
+        <default-search>
+          <items>
+            <item id="title">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="service_id">
+              <rank>40</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>50</rank>
+            </item>
+            <item id="status">
+              <rank>60</rank>
+            </item>
+          </items>
+        </default-search>
+        <search>
+          <items>
+            <item id="title">
+              <rank>10</rank>
+            </item>
+            <item id="org_id">
+              <rank>20</rank>
+            </item>
+            <item id="caller_id">
+              <rank>25</rank>
+            </item>
+            <item id="team_id">
+              <rank>30</rank>
+            </item>
+            <item id="agent_id">
+              <rank>40</rank>
+            </item>
+            <item id="service_id">
+              <rank>40</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>50</rank>
+            </item>
+            <item id="status">
+              <rank>60</rank>
+            </item>
+            <item id="start_date">
+              <rank>70</rank>
+            </item>
+            <item id="end_date">
+              <rank>80</rank>
+            </item>
+            <item id="next_wo_create_date">
+              <rank>90</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="org_id">
+              <rank>10</rank>
+            </item>
+            <item id="status">
+              <rank>20</rank>
+            </item>
+            <item id="service_id">
+              <rank>30</rank>
+            </item>
+            <item id="servicesubcategory_id">
+              <rank>40</rank>
+            </item>
+            <item id="work_periodicity_pattern">
+              <rank>50</rank>
+            </item>
+            <item id="next_wo_create_date">
+              <rank>60</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="lnkDocumentToTicket" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <properties>
+        <is_link>1</is_link>
+        <category>bizmodel</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>lnkdocumenttoticket</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field/>
+        <naming>
+          <attributes>
+            <attribute id="ticket_id"/>
+            <attribute id="document_id"/>
+          </attributes>
+        </naming>
+        <display_template/>
+        <icon/>
+        <reconciliation>
+          <attributes>
+            <attribute id="ticket_id"/>
+            <attribute id="document_id"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="ticket_id" xsi:type="AttributeExternalKey">
+          <sql>ticket_id</sql>
+          <target_class>Ticket</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="document_id" xsi:type="AttributeExternalKey">
+          <sql>document_id</sql>
+          <target_class>Document</target_class>
+          <is_null_allowed>false</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+        </field>
+        <field id="document_type" xsi:type="AttributeExternalField">
+          <extkey_attcode>document_id</extkey_attcode>
+          <target_attcode>documenttype_name</target_attcode>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="ticket_id">
+              <rank>10</rank>
+            </item>
+            <item id="document_id">
+              <rank>20</rank>
+            </item>
+            <item id="document_type">
+              <rank>30</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="ticket_id">
+              <rank>10</rank>
+            </item>
+            <item id="document_id">
+              <rank>20</rank>
+            </item>
+            <item id="document_type">
+              <rank>30</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="ticket_id">
+              <rank>10</rank>
+            </item>
+            <item id="document_id">
+              <rank>20</rank>
+            </item>
+            <item id="document_type">
+              <rank>30</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="WorkOrder">
+      <fields>
+        <field id="ticket_id">
+          <!--Do not let users to create work orders for schedules manually-->
+          <filter _delta="define"><![CDATA[SELECT Ticket WHERE finalclass NOT IN ('IntervalWorkSchedule', 'FixedWorkSchedule')]]></filter>
+        </field>
+      </fields>
+      <methods>
+        <method id="GetAttributeFlags" _delta="define">
+          <static>false</static>
+          <access>public</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[	public function GetAttributeFlags($sAttCode, &$aReasons = array(), $sTargetState = '')
+	{
+		if (($sAttCode === 'ticket_id') && (!$this->IsNew()))
+		{
+			if (MetaModel::IsParentClass('WorkSchedule', $this->Get('ticket_id->finalclass')))
+			{
+				// Do not let users to create work orders for schedules manually
+				return(OPT_ATT_READONLY | parent::GetAttributeFlags($sAttCode, $aReasons, $sTargetState));
+			}
+		}
+
+		return parent::GetAttributeFlags($sAttCode, $aReasons, $sTargetState);
+	}
+]]></code>
+        </method>
+        <method id="OnUpdate" _delta="redefine">
+          <static>false</static>
+          <access>protected</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[	protected function OnUpdate()
+	{
+		$sTicketClass = $this->Get('ticket_id_finalclass_recall');
+		if (!MetaModel::IsParentClass('WorkSchedule', $sTicketClass)) {
+			$this->UpdateParentTicketLog();
+		}
+		$aChanges = $this->ListChanges();
+		if (array_key_exists('status', $aChanges) && $this->Get('status') === 'closed') {
+			$this->bWasClosed = true;
+		}
+	}]]></code>
+        </method>
+        <method id="AfterUpdate" _delta="define">
+          <static>false</static>
+          <access>protected</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[	protected function AfterUpdate()
+	{
+		if (isset($this->bWasClosed) && $this->Get('ticket_id->finalclass') === 'IntervalWorkSchedule')
+		{
+			/** @var IntervalWorkSchedule $oWorkSchedule */
+			$oWorkSchedule = MetaModel::GetObject('IntervalWorkSchedule', $this->Get('ticket_id'));
+			$oWorkSchedule->ComputeNextDates($this->Get('end_date'));
+			$oWorkSchedule->DBWrite();
+			if ($sNextWorkOrderStartDate = $oWorkSchedule->GetAsHTML('next_wo_start_date')) {
+				$sNextWorkOrderCreateDate = $oWorkSchedule->GetAsHTML('next_wo_create_date');
+				$sMessage = Dict::Format('UI:WorkSchedule:FurtherWorkPlannedFor_StartDate_CreateDate', $sNextWorkOrderStartDate, $sNextWorkOrderCreateDate);
+				cmdbAbstractObject::SetSessionMessage('WorkOrder', $this->GetKey(), 'further-work-planned-message', $sMessage, 'info', 99);
+			}
+		}
+	}]]></code>
+        </method>
+        <method id="AfterDelete" _delta="define">
+          <static>false</static>
+          <access>protected</access>
+          <type>Overload-DBObject</type>
+          <code><![CDATA[	protected function AfterDelete()
+	{
+		if ($this->Get('status') !== 'closed' && $this->Get('ticket_id->finalclass') === 'IntervalWorkSchedule')
+		{
+			/** @var IntervalWorkSchedule $oWorkSchedule */
+			$oWorkSchedule = MetaModel::GetObject('IntervalWorkSchedule', $this->Get('ticket_id'));
+			$oWorkSchedule->ComputeNextDates();
+			$oWorkSchedule->DBWrite();
+		}
+	}]]></code>
+        </method>
+      </methods>
+    </class>
+    <class id="WorkOrderTemplate">
+      <fields>
+        <field id="workschedules_list" xsi:type="AttributeLinkedSet" _delta="define">
+          <linked_class>WorkSchedule</linked_class>
+          <ext_key_to_me>wo_template_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <edit_mode>none</edit_mode>
+        </field>
+      </fields>
+      <presentation>
+        <details>
+          <items>
+            <item id="workschedules_list" _delta="define">
+              <rank>120</rank>
+            </item>
+          </items>
+        </details>
+      </presentation>
+    </class>
+  </classes>
+  <menus>
+    <menu id="WorkOrderManagement" xsi:type="MenuGroup" _delta="define">
+      <rank>58</rank>
+      <style>
+        <decoration_classes>fas fa-calendar-check</decoration_classes>
+      </style>
+    </menu>
+    <menu id="WorkOrderMgmt:Overview" xsi:type="DashboardMenuNode" _delta="define">
+      <rank>0</rank>
+      <parent>WorkOrderManagement</parent>
+      <definition>
+        <layout>DashboardLayoutTwoCols</layout>
+        <title>UI:WorkOrderMgmtMenuOverview:Title</title>
+        <auto_reload>
+          <enabled>false</enabled>
+          <interval>300</interval>
+        </auto_reload>
+        <cells>
+          <cell id="0">
+            <rank>0</rank>
+            <dashlets>
+              <dashlet id="0" xsi:type="DashletObjectList">
+                <rank>0</rank>
+                <title>UI:WorkOrderMgmtMenuOverview:WOsPlannedStartDatePassed</title>
+                <query><![CDATA[SELECT WorkOrder WHERE status IN ('new','assigned') AND planned_start_date < NOW()]]></query>
+                <menu>false</menu>
+              </dashlet>
+            </dashlets>
+          </cell>
+          <cell id="1">
+            <rank>1</rank>
+            <dashlets>
+              <dashlet id="1" xsi:type="DashletObjectList">
+                <rank>0</rank>
+                <title>UI:WorkOrderMgmtMenuOverview:WOsPlannedEndDatePassed</title>
+                <query><![CDATA[SELECT WorkOrder WHERE status IN ('open') AND planned_end_date < NOW()]]></query>
+                <menu>false</menu>
+              </dashlet>
+            </dashlets>
+          </cell>
+          <cell id="2">
+            <rank>2</rank>
+            <dashlets>
+              <dashlet id="2" xsi:type="DashletGroupByTable">
+                <rank>0</rank>
+                <title>UI:WorkOrderMgmtMenuOverview:WOsByAgent</title>
+                <query><![CDATA[SELECT WorkOrder WHERE status != 'closed']]></query>
+                <group_by>agent_id</group_by>
+                <style>table</style>
+                <aggregation_function>count</aggregation_function>
+                <aggregation_attribute></aggregation_attribute>
+                <limit></limit>
+                <order_by>function</order_by>
+                <order_direction>desc</order_direction>
+              </dashlet>
+            </dashlets>
+          </cell>
+          <cell id="3">
+            <rank>3</rank>
+            <dashlets>
+              <dashlet id="3" xsi:type="DashletGroupByTable">
+                <rank>0</rank>
+                <title>UI:WorkOrderMgmtMenuOverview:WOsByStatus</title>
+                <query><![CDATA[SELECT WorkOrder WHERE status != 'closed']]></query>
+                <group_by>status</group_by>
+                <style>table</style>
+                <aggregation_function>count</aggregation_function>
+                <aggregation_attribute></aggregation_attribute>
+                <limit></limit>
+                <order_by>attribute</order_by>
+                <order_direction>desc</order_direction>
+              </dashlet>
+            </dashlets>
+          </cell>
+          <cell id="4">
+            <rank>4</rank>
+            <dashlets>
+              <dashlet id="4" xsi:type="DashletGroupByPie">
+                <rank>0</rank>
+                <title>UI:WorkOrderMgmtMenuOverview:WOsScheduledLessThen1HourBeforeStart</title>
+                <query><![CDATA[SELECT WorkOrder AS wo JOIN CMDBChangeOpCreate AS chop ON chop.objkey = wo.id JOIN CMDBChange AS ch ON chop.change = ch.id WHERE chop.objclass = 'WorkOrder' AND ch.date > DATE_SUB(NOW(), INTERVAL 14 DAY) AND ch.date > DATE_SUB(wo.planned_start_date, INTERVAL 1 HOUR)]]></query>
+                <group_by>team_id</group_by>
+                <style>pie</style>
+                <aggregation_function>count</aggregation_function>
+                <aggregation_attribute></aggregation_attribute>
+                <limit></limit>
+                <order_by>attribute</order_by>
+                <order_direction>desc</order_direction>
+              </dashlet>
+            </dashlets>
+          </cell>
+          <cell id="5">
+            <rank>6</rank>
+            <dashlets>
+              <dashlet id="5" xsi:type="DashletGroupByPie">
+                <rank>0</rank>
+                <title>UI:WorkOrderMgmtMenuOverview:WOsOutOfPlanLast14DaysPerTeam</title>
+                <query><![CDATA[SELECT WorkOrder WHERE status = 'closed' AND end_date > DATE_SUB(NOW(), INTERVAL 14 DAY) AND (planned_start_date < start_date OR planned_end_date > end_date)]]></query>
+                <group_by>team_id</group_by>
+                <style>pie</style>
+                <aggregation_function>count</aggregation_function>
+                <aggregation_attribute></aggregation_attribute>
+                <limit></limit>
+                <order_by>function</order_by>
+                <order_direction>desc</order_direction>
+              </dashlet>
+            </dashlets>
+          </cell>
+        </cells>
+      </definition>
+    </menu>
+    <menu id="Calendar:Overview" xsi:type="DashboardMenuNode" _delta="define">
+      <rank>1</rank>
+      <parent>WorkOrderManagement</parent>
+      <definition>
+        <layout>DashboardLayoutOneCol</layout>
+        <title></title>
+        <auto_reload>
+          <enabled>false</enabled>
+          <interval>300</interval>
+        </auto_reload>
+        <cells>
+          <cell id="0">
+            <rank>0</rank>
+            <dashlets>
+              <dashlet id="1" xsi:type="DashletCalendar">
+                <rank>0</rank>
+                <title>UI:WorkOrderCalendar:Title</title>
+                <default_view>month</default_view>
+                <agenda_day>true</agenda_day>
+                <agenda_week>true</agenda_week>
+                <list_period>listWeek</list_period>
+                <enabled_1>true</enabled_1>
+                <query_1>SELECT WorkOrder WHERE status IN ('new','assigned')</query_1>
+                <start_attr_1>planned_start_date</start_attr_1>
+                <end_attr_1>planned_end_date</end_attr_1>
+                <unfinished_1>false</unfinished_1>
+                <title_attr_1>ref</title_attr_1>
+                <description_attr_1>name</description_attr_1>
+                <color_1>#006699</color_1>
+                <enabled_2>true</enabled_2>
+                <query_2>SELECT WorkOrder WHERE status = 'open'</query_2>
+                <start_attr_2>start_date</start_attr_2>
+                <end_attr_2>end_date</end_attr_2>
+                <unfinished_2>true</unfinished_2>
+                <title_attr_2>ref</title_attr_2>
+                <description_attr_2>name</description_attr_2>
+                <color_2>#009933</color_2>
+                <enabled_3>true</enabled_3>
+                <query_3>SELECT WorkOrder WHERE status = 'closed'</query_3>
+                <start_attr_3>start_date</start_attr_3>
+                <end_attr_3>end_date</end_attr_3>
+                <unfinished_3>false</unfinished_3>
+                <title_attr_3>ref</title_attr_3>
+                <description_attr_3>name</description_attr_3>
+                <color_3>#666666</color_3>
+              </dashlet>
+            </dashlets>
+          </cell>
+        </cells>
+      </definition>
+    </menu>
+    <menu id="WorkOrderMgmt:Shortcuts" xsi:type="TemplateMenuNode" _delta="define">
+      <rank>5</rank>
+      <parent>WorkOrderManagement</parent>
+      <template_file/>
+    </menu>
+    <menu id="WorkOrderMgmt:NewWorkOrder" xsi:type="NewObjectMenuNode" _delta="define">
+      <rank>1</rank>
+      <parent>WorkOrderMgmt:Shortcuts</parent>
+      <class>WorkOrder</class>
+      <enable_class>WorkOrder</enable_class>
+      <enable_action>UR_ACTION_MODIFY</enable_action>
+      <enable_permission>UR_ALLOWED_YES</enable_permission>
+    </menu>
+    <menu id="WorkOrderMgmt:MyWorkOrders" xsi:type="OQLMenuNode" _delta="define">
+      <rank>2</rank>
+      <parent>WorkOrderMgmt:Shortcuts</parent>
+      <oql><![CDATA[SELECT WorkOrder WHERE agent_id = :current_contact_id AND status NOT IN ("closed")]]></oql>
+      <do_search/>
+    </menu>
+    <menu id="WorkOrderMgmt:OpenWorkOrders" xsi:type="OQLMenuNode" _delta="define">
+      <rank>3</rank>
+      <parent>WorkOrderMgmt:Shortcuts</parent>
+      <oql><![CDATA[SELECT WorkOrder WHERE status NOT IN ("closed")]]></oql>
+      <do_search>1</do_search>
+    </menu>
+    <menu id="WorkOrderMgmt:SearchWorkOrder" xsi:type="SearchMenuNode" _delta="define">
+      <rank>4</rank>
+      <parent>WorkOrderMgmt:Shortcuts</parent>
+      <class>WorkOrder</class>
+    </menu>
+    <menu id="WorkSchedule:Shortcuts" xsi:type="TemplateMenuNode" _delta="define">
+      <rank>6</rank>
+      <parent>WorkOrderManagement</parent>
+      <template_file/>
+    </menu>
+    <menu id="WorkSchedule:NewWorkSchedule" xsi:type="NewObjectMenuNode" _delta="define">
+      <rank>1</rank>
+      <parent>WorkSchedule:Shortcuts</parent>
+      <class>WorkSchedule</class>
+      <enable_class>WorkSchedule</enable_class>
+      <enable_action>UR_ACTION_MODIFY</enable_action>
+      <enable_permission>UR_ALLOWED_YES</enable_permission>
+    </menu>
+    <menu id="WorkSchedule:AllWorkSchedule" xsi:type="OQLMenuNode" _delta="define">
+      <rank>2</rank>
+      <parent>WorkSchedule:Shortcuts</parent>
+      <oql><![CDATA[SELECT WorkSchedule]]></oql>
+      <do_search>1</do_search>
+    </menu>
+    <menu id="WorkOrderMgmt:AllWorkOrderTemplates" xsi:type="OQLMenuNode" _delta="define">
+      <rank>7</rank>
+      <parent>WorkOrderManagement</parent>
+      <oql><![CDATA[SELECT WorkOrderTemplate]]></oql>
+      <do_search>1</do_search>
+    </menu>
+  </menus>
+  <user_rights>
+    <groups>
+      <group id="WorkSchedule" _delta="define">
+        <classes>
+          <class id="WorkSchedule"/>
+          <class id="IntervalWorkSchedule"/>
+          <class id="FixedWorkSchedule"/>
+          <class id="lnkDocumentToTicket"/>
+          <class id="WorkOrderTemplate"/>
+        </classes>
+      </group>
+    </groups>
+    <profiles>
+      <profile id="101" _delta="define">
+        <name>Work Schedule Manager</name>
+        <description>Person who manages Work Schedules and Work Order Templates</description>
+        <groups>
+          <group id="WorkSchedule">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_activate">allow</action>
+              <action id="stimulus:ev_deactivate">allow</action>
+            </actions>
+          </group>
+          <group id="Ticketing">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+    </profiles>
+  </user_rights>
+</itop_design>
