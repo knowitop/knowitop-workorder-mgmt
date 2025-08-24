@@ -1,6 +1,6 @@
 # knowitop-workorder-mgmt/1.1.1
 
-## Управление работами
+## Управление работами для Combodo iTop
 
 Автоматическое создание нарядов по расписанию.
 
@@ -33,7 +33,7 @@
 <img width="2798" height="1910" alt="image" src="https://github.com/user-attachments/assets/3b922821-fe53-4c96-aaad-416f0156d84e" />
 
 
-## Work Order Management
+## Work Order Management for Combodo iTop
 
 Automated scheduled work order creation.
 
