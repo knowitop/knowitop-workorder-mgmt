@@ -1,7 +1,5 @@
 # knowitop-workorder-mgmt/1.1.1
 
-<img width="2798" height="1910" alt="image" src="https://github.com/user-attachments/assets/a05acb19-b898-4de3-829e-aaf477cf4fe0" />
-
 ## Управление работами
 
 Автоматическое создание нарядов по расписанию.
@@ -26,6 +24,14 @@
 
 - iTop 3.0.0 или выше
 - [knowitop-dashlet-calendar](https://github.com/knowitop/knowitop-dashlet-calendar)
+- [knowitop-checklist](https://github.com/knowitop/knowitop-checklist) (опционально)
+
+<img width="2798" height="1910" alt="image" src="https://github.com/user-attachments/assets/a05acb19-b898-4de3-829e-aaf477cf4fe0" />
+<img width="2798" height="1910" alt="image" src="https://github.com/user-attachments/assets/c6ae77c2-f602-4f2b-a945-19a7c93d4743" />
+<img width="2798" height="1910" alt="image" src="https://github.com/user-attachments/assets/8f56175f-db18-4b2d-8de6-f0cd1527dec2" />
+<img width="2798" height="1910" alt="image" src="https://github.com/user-attachments/assets/730f7980-d418-4187-bd4e-f0eb8ceb198e" />
+<img width="2798" height="1910" alt="image" src="https://github.com/user-attachments/assets/3b922821-fe53-4c96-aaad-416f0156d84e" />
+
 
 ## Work Order Management
 
@@ -51,3 +57,5 @@ Requirements:
 
 - iTop 3.0.0 or higher
 - [knowitop-dashlet-calendar](https://github.com/knowitop/knowitop-dashlet-calendar)
+- [knowitop-checklist](https://github.com/knowitop/knowitop-checklist) (optional)
+
